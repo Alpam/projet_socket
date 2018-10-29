@@ -415,8 +415,10 @@ void action(const char *buf,struct_for_listener *cl){
 		char mess[12];
 		if(add_slave(s, ff_tmp, &cl->last_id)){
 			sprintf(mess,"A %d",s.id);
+			printf("Connection de %s (%s:%s)\n",smbl,s.ip,s.port);
 		}
 		else{
+			printf("Liste pleine, refus de %s (%s:%s)\n",smbl,s.ip,s.port);
 			memset(mess,'\0',12);
 			mess[0]='E';
 		}
@@ -429,7 +431,6 @@ void action(const char *buf,struct_for_listener *cl){
 			tmp_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
 			throwto_4(tmp_sock,s.saddr_4,mess);
 		}
-		printf("Connection de %s (%s:%s)\n",smbl,s.ip,s.port);
 		free(sav);
 		close(tmp_sock);
 
@@ -437,7 +438,9 @@ void action(const char *buf,struct_for_listener *cl){
 	else if(buf[0]=='D'){
 		int id = atoi(&buf[2]);
 		server *s = find_serv_by_id(cl->fct_f,id);
+		fprintf(stdout,"Deconnection de ",id);
 		if(s!=NULL){
+			fprintf(stdout,"(%s:%s)\n",s->ip,s->port);
 			free(s->ip);
 			free(s->port);
 			s->id = -1;
