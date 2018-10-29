@@ -54,13 +54,13 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 	int socket_listener;
 	if(t_ip == 6){
 		socket_listener = socket(AF_INET6,
-														 SOCK_DGRAM,
-														 IPPROTO_UDP);
+								 SOCK_DGRAM,
+								 IPPROTO_UDP);
 	}
 	else{
 		socket_listener = socket(AF_INET,
-														 SOCK_DGRAM,
-														 IPPROTO_UDP);
+								 SOCK_DGRAM,
+								 IPPROTO_UDP);
 	}
 	//creation de la structure principale de l'esclave
 	struct_for_listener_c cl;
@@ -178,12 +178,25 @@ void *listener_c(void *arg){
 	memset(buf,'\0',1024);
 
 	//mise en place du mutex pour la terminaison du keep alive
-	pthread_mutex_t mutex;
-	pthread_mutex_init(&mutex,NULL);
-	pthread_mutex_lock(&mutex);
+	pthread_mutex_t mutex_ka;
+	pthread_mutex_init(&mutex_ka,NULL);
+	pthread_mutex_lock(&mutex_ka);
 
 	pthread_t thread_ka;
-	int ka_started = 0;
+
+	//mise en place du thread de timeout
+	pthread_mutex_t mutex_to;
+	pthread_mutex_init(&mutex_to,NULL);
+
+	struct_for_to to;
+	to.socket = cl->socket_listener;
+	to.mutex  = &mutex_to;
+
+	pthread_t thread_to;
+	pthread_create(&thread_to,
+				   NULL,
+				   timeout,
+				   &to);
 
 	//boucle sur la reception, cette derniere s'arrete
 	//lorsque le thread principal shutdown la socket_listener
@@ -191,6 +204,10 @@ void *listener_c(void *arg){
 			//creation de la structure pour la fonction action
 			printf("in come:%s\n",buf);
 			if(buf[0]=='E'){
+				int r_mu = pthread_mutex_trylock(&mutex_to);
+				if (r_mu != 0){
+					break;
+				}
 				printf("master complet pour %s\nUtiliser \"quit\" pour terminer.\n",cl->smbl);
 				break;
 			}
@@ -205,14 +222,14 @@ void *listener_c(void *arg){
 				int sock_master;
 				if(cl->t_ip == 6){
 					sock_master = socket(AF_INET6,
-															 SOCK_DGRAM,
-															 IPPROTO_UDP);
+										 SOCK_DGRAM,
+										 IPPROTO_UDP);
 					throwto(sock_master,cl->master,rep);
 				}
 				else{
 					sock_master = socket(AF_INET,
-															 SOCK_DGRAM,
-															 IPPROTO_UDP);
+										 SOCK_DGRAM,
+										 IPPROTO_UDP);
 					throwto_4(sock_master,cl->master_4,rep);
 				}
 				free(rep);
@@ -220,6 +237,10 @@ void *listener_c(void *arg){
 			else if(buf[0]=='A'){
 				//acceptation par le maitre
 				//récupération de l'id
+				int r_mu = pthread_mutex_trylock(&mutex_to);
+				if (r_mu != 0){
+					break;
+				}
 				int len = strlen(buf)-2;
 				char *id = malloc(len);
 				for(int i=0;i<len;i++){
@@ -230,22 +251,30 @@ void *listener_c(void *arg){
 				struct_for_ka ka;
 				ka.id = id;
 				ka.t_ip = cl->t_ip;
-				ka.mutex = &mutex;
-
+				ka.mutex = &mutex_ka;
 				pthread_create(&thread_ka,
 								 NULL,
 								 keep_alive,
 								 &ka);
-				ka_started = 1;
+				pthread_detach(thread_ka);
 			}
 			memset(buf,'\0',1024);
 		}
 		close(cl->socket_listener);
-		pthread_mutex_unlock(&mutex);
-		if (ka_started){
-			pthread_join(thread_ka,NULL);
-		}
-		pthread_mutex_destroy(&mutex);
+		pthread_mutex_unlock(&mutex_ka);
+		pthread_join(thread_to,NULL);
+		fputs("quit",stdin);
+		fflush(stdin);
+}
+
+void *timeout(void *arg){
+	sleep(10);
+	struct_for_to *to = (struct_for_to *)arg;
+	int r_mu = pthread_mutex_trylock(to->mutex);
+	if(r_mu == 0){
+		printf("Pas de reponse, ferme par timeout\n");
+		shutdown(to->socket,2);
+	}
 }
 
 void *keep_alive(void *arg){
@@ -290,6 +319,7 @@ void *keep_alive(void *arg){
 		}
 	}
 	free(m);
+	pthread_mutex_destroy(ka->mutex);
 }
 
 void throwto(int socket, struct sockaddr_in6 target, const char *message){

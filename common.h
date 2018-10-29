@@ -42,7 +42,19 @@ typedef struct{
 	char *id;
 	int   t_ip;
 	pthread_mutex_t *mutex;
+	char *m;
 }struct_for_ka;
+
+/*
+ * structure portant toutes les informations pour le thread
+ * de time-out pour la connexion avec le master : si pas 
+ * de message A ou E provoque un la fermeture de la socket.
+ */
+typedef struct{
+	int socket;
+	pthread_mutex_t *mutex;
+}struct_for_to;
+
 
 /*
  * fonction principale d'un esclave, lance les threads keep alive
@@ -60,6 +72,11 @@ void *listener_c(void *arg);
  * fonction pour le thread gérant le keep alive
  */
 void *keep_alive(void *arg);
+
+/*
+ * fonction pour le thread gérant le timeout
+ */
+void *timeout(void *arg);
 
 /*
  * fonction permettant d'envoyer un message vers une adresse
