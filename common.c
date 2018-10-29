@@ -123,12 +123,11 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 		if (!(strncmp(buf,"quit",4))){
 			break;
 		}
+		printf("en attente :(\"quit\" pour quitter)\n");
 		memset(&buf,'\0',100);
 	}
-
 	shutdown(socket_listener,SHUT_RDWR);
 	pthread_join(thread_listener,NULL);
-
 	//message de deconnection pour le maitre
 	if(cl.id != NULL){
 		char *tmp = malloc(strlen(cl.id)+2);
@@ -184,6 +183,7 @@ void *listener_c(void *arg){
 	pthread_mutex_lock(&mutex);
 
 	pthread_t thread_ka;
+	int ka_started = 0;
 
 	//boucle sur la reception, cette derniere s'arrete
 	//lorsque le thread principal shutdown la socket_listener
@@ -216,7 +216,6 @@ void *listener_c(void *arg){
 					throwto_4(sock_master,cl->master_4,rep);
 				}
 				free(rep);
-				close(sock_master);
 			}
 			else if(buf[0]=='A'){
 				//acceptation par le maitre
@@ -237,13 +236,15 @@ void *listener_c(void *arg){
 								 NULL,
 								 keep_alive,
 								 &ka);
-
+				ka_started = 1;
 			}
 			memset(buf,'\0',1024);
 		}
 		close(cl->socket_listener);
 		pthread_mutex_unlock(&mutex);
-		pthread_join(thread_ka,NULL);
+		if (ka_started){
+			pthread_join(thread_ka,NULL);
+		}
 		pthread_mutex_destroy(&mutex);
 }
 
@@ -288,7 +289,6 @@ void *keep_alive(void *arg){
 			throwto_4(sock_master,master_4,m);
 		}
 	}
-	close(sock_master);
 	free(m);
 }
 

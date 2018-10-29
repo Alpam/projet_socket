@@ -18,7 +18,7 @@
 #ifndef __MASTER_H
 #define __MASTER_H
 
-#define RDDC_MAX 4
+#define RDDC_MAX 1
 
 
 /*

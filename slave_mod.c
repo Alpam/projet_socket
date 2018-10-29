@@ -33,6 +33,7 @@ int main(int argc, char **argv) {
 		printf("donne ip port\n");
 		return 0;
 	}
+	printf("Modulo started !");
 	core_slave("%", argv[1], argv[2], (*modulo));
 	return 0;
 }
@@ -69,6 +70,7 @@ char *modulo(char *str, char *id) {
 		strcat(rtr, "error: fonction ne prend que 2 arguments");
 		return rtr;
 	}
+	printf("Now processing");
 	for(i=0,j=0;i<strlen(str);i++,j++){
 		if(str[i]==','){
 			mi_r = atoi(buf);
