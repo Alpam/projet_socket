@@ -11,7 +11,6 @@
  *       Compiler:  gcc
  *
  *         Author:  Paul Robin (), paul.robin@etu.unistra.fr
- *				   Geoffrey Bisch (), geoffrey.bisch@etu.unistra.fr *   Organization:  
  *
  * =====================================================================================
  */
@@ -23,7 +22,6 @@
 #include <string.h>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <pthread.h>
 #include <signal.h>
 
 #include "common.h"
@@ -62,21 +60,30 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 								 SOCK_DGRAM,
 								 IPPROTO_UDP);
 	}
+
+	pthread_t thread_quit_loop;
+	pthread_create(&thread_quit_loop,
+								 NULL,
+								 quit_loop,
+								 NULL);
+
 	//creation de la structure principale de l'esclave
 	struct_for_listener_c cl;
-	cl.ip              = tmp_ip;
-	cl.id              = NULL;
-	cl.fct             = mission;
-	cl.port            = atoi(port);
-	cl.smbl            = symbole;
-	cl.t_ip            = t_ip;
-	cl.socket_listener = socket_listener;
+	cl.ip               = tmp_ip;
+	cl.id               = NULL;
+	cl.fct              = mission;
+	cl.port             = atoi(port);
+	cl.smbl             = symbole;
+	cl.t_ip             = t_ip;
+	cl.flag             = 1;
+	cl.socket_listener  = socket_listener;
+	cl.thread_quit_loop = thread_quit_loop;
 	//lancement de la socket d'écoute
 	pthread_t thread_listener;
 	pthread_create(&thread_listener,
-								 NULL,
-								 listener_c,
-								 &cl);
+				   NULL,
+				   listener_c,
+				   &cl);
 
 	//concaténation de l'ip et port pour les transmettre au maitre
 	int len = strlen(tmp_ip)+strlen(port)+strlen(symbole)+4;
@@ -114,19 +121,11 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 		throwto_4(sock_master, master_4 ,my_addr);
 	}
 	free(my_addr);
-
-	//petite boucle permettant de quitter proprement
-	char buf[100];
-	printf("en attente :(\"quit\" pour quitter)\n");
-	memset(&buf,'\0',100);
-	while(fgets(buf,100,stdin)!=NULL){
-		if (!(strncmp(buf,"quit",4))){
-			break;
-		}
-		printf("en attente :(\"quit\" pour quitter)\n");
-		memset(&buf,'\0',100);
+	
+	pthread_join(thread_quit_loop,NULL);
+	if(cl.flag){
+		shutdown(socket_listener,SHUT_RDWR);
 	}
-	shutdown(socket_listener,SHUT_RDWR);
 	pthread_join(thread_listener,NULL);
 	//message de deconnection pour le maitre
 	if(cl.id != NULL){
@@ -199,8 +198,9 @@ void *listener_c(void *arg){
 				   &to);
 
 	//boucle sur la reception, cette derniere s'arrete
-	//lorsque le thread principal shutdown la socket_listener
-		while(recv(cl->socket_listener, buf,1024,0) != 0){
+	//lorsque le thread principal ou le thread time out 
+	//shutdown la socket_listener
+	while(recv(cl->socket_listener, buf,1024,0) != 0){
 			//creation de la structure pour la fonction action
 			printf("in come:%s\n",buf);
 			if(buf[0]=='E'){
@@ -208,7 +208,7 @@ void *listener_c(void *arg){
 				if (r_mu != 0){
 					break;
 				}
-				printf("master complet pour %s\nUtiliser \"quit\" pour terminer.\n",cl->smbl);
+				printf("master complet pour %s\n",cl->smbl);
 				break;
 			}
 			else if(buf[0]=='S'){
@@ -259,16 +259,30 @@ void *listener_c(void *arg){
 				pthread_detach(thread_ka);
 			}
 			memset(buf,'\0',1024);
+	}
+	cl->flag = 0;
+	pthread_cancel(cl->thread_quit_loop);
+	close(cl->socket_listener);
+	pthread_mutex_unlock(&mutex_ka);
+	pthread_join(thread_to,NULL);
+}
+
+void *quit_loop(void *arg){
+//petite boucle permettant de quitter proprement
+	char buf[100];
+	printf("en attente :(\"quit\" pour quitter)\n");
+	memset(&buf,'\0',100);
+	while(fgets(buf,100,stdin)!=NULL){
+		if (!(strncmp(buf,"quit",4))){
+			break;
 		}
-		close(cl->socket_listener);
-		pthread_mutex_unlock(&mutex_ka);
-		pthread_join(thread_to,NULL);
-		fputs("quit",stdin);
-		fflush(stdin);
+		printf("en attente :(\"quit\" pour quitter)\n");
+		memset(&buf,'\0',100);
+	}
 }
 
 void *timeout(void *arg){
-	sleep(10);
+	sleep(5);
 	struct_for_to *to = (struct_for_to *)arg;
 	int r_mu = pthread_mutex_trylock(to->mutex);
 	if(r_mu == 0){

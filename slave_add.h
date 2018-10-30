@@ -11,7 +11,6 @@
  *       Compiler:  gcc
  *
  *         Author:  Paul Robin (), paul.robin@etu.unistra.fr
- *				   Geoffrey Bisch (), geoffrey.bisch@etu.unistra.fr *   Organization:  
  *
  * =====================================================================================
  */

@@ -10,14 +10,14 @@
  *       Revision:  none
  *       Compiler:  gcc
  *
- *         Author:  Paul Robin (), paul.robin@etu.unistra.fr
- *				   Geoffrey Bisch (), geoffrey.bisch@etu.unistra.fr *   Organization:  
+ *         Author:  Paul Robin (), paul.robin@etu.unistra.fr 
  *
  * =====================================================================================
  */
 #ifndef __COMMON_H
 #define __COMMON_H
 
+#include <pthread.h>
 /*
  * structure portant toute les informations nécessaires au 
  * thread gérant la socket d'écoute.
@@ -29,9 +29,11 @@ typedef struct{
 	const char         *smbl;
 	int                 t_ip;
 	int                 port;
+	int                 flag;
 	int                 socket_listener;
 	struct sockaddr_in6 master;
 	struct sockaddr_in  master_4;
+	pthread_t 			thread_quit_loop;
 }struct_for_listener_c;
 
 /*
@@ -67,6 +69,12 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
  * fonction pour le thread gérant la socket d'écoute
  */
 void *listener_c(void *arg);
+
+/*
+ * fonction pour le thread gérant la boucle permettant
+ * à l'utilisateur de quitter avec une commande
+ */
+void *quit_loop(void *arg);
 
 /*
  * fonction pour le thread gérant le keep alive

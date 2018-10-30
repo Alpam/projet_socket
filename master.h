@@ -11,14 +11,13 @@
  *       Compiler:  gcc
  *
  *         Author:  Paul Robin (), paul.robin@etu.unistra.fr
- *				   Geoffrey Bisch (), geoffrey.bisch@etu.unistra.fr *   Organization:  
  *
  * =====================================================================================
  */
 #ifndef __MASTER_H
 #define __MASTER_H
 
-#define RDDC_MAX 1
+#define RDDC_MAX 4
 
 
 /*

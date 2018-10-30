@@ -11,7 +11,6 @@
  *       Compiler:  gcc
  *
  *         Author:  Paul Robin (), paul.robin@etu.unistra.fr
- *				   Geoffrey Bisch (), geoffrey.bisch@etu.unistra.fr *   Organization:  
  *
  
  * =====================================================================================
@@ -37,11 +36,11 @@ int main(int argc, char **argv){
 	//creation des sockets
 	int socket_list_6, socket_list_4;
 	socket_list_6 = socket(AF_INET6,
-													 SOCK_DGRAM,
-													 IPPROTO_UDP);
+						   SOCK_DGRAM,
+						   IPPROTO_UDP);
 	socket_list_4 = socket(AF_INET,
-												 SOCK_DGRAM,
-												 IPPROTO_UDP);
+						   SOCK_DGRAM,
+						   IPPROTO_UDP);
 
 	//preparation de la structure principale
 	struct_for_listener cl;
@@ -65,18 +64,17 @@ int main(int argc, char **argv){
 	pthread_t thread_listener;
 	pthread_t thread_listener_4;
 	pthread_create(&thread_listener,
-								 NULL,
-								 listener,
-								 &cl);
+				   NULL,
+				   listener,
+				   &cl);
 	pthread_create(&thread_listener_4,
-								 NULL,
-								 listener_4,
-								 &cl);
+				   NULL,
+				   listener_4,
+				   &cl);
 
 	struct_for_janitor cj;
 	cj.cl = &cl;
 	pthread_mutex_init(&cj.mutex,NULL);
-	pthread_mutex_lock(&cj.mutex);
 
 	pthread_t thread_janitor;
 	pthread_create(&thread_janitor,
@@ -91,7 +89,8 @@ int main(int argc, char **argv){
 	shutdown(socket_list_6,SHUT_RDWR);
 	shutdown(socket_list_4,SHUT_RDWR);
 	pthread_join(thread_listener,NULL);
-	pthread_mutex_unlock(&cj.mutex);
+	pthread_mutex_lock(&cj.mutex);
+	pthread_cancel(thread_janitor);
 	pthread_join(thread_janitor,NULL);
 	pthread_mutex_destroy(&cj.mutex);
 	clean(&cl);
@@ -503,10 +502,7 @@ void *janitor(void *arg){
 	fct_family *ff;
 	while(sleep(15)==0){
 		//vérification de l'état du master (terminaison ou non)
-		int r_mu = pthread_mutex_trylock(&cj->mutex);
-		if(r_mu == 0){
-			break;
-		}
+		pthread_mutex_lock(&cj->mutex);
 		pthread_mutex_lock(&cl->mutex);
 		ff = cl->fct_f;
 		while(ff != NULL){
@@ -559,6 +555,7 @@ void *janitor(void *arg){
 			ff = ff->next;
 		}
 		pthread_mutex_unlock(&cl->mutex);
+		pthread_mutex_unlock(&cj->mutex);
 	}
 }
 
