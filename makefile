@@ -1,6 +1,6 @@
 #compilsal -Wall -Wextra -Werror
 #compilcov -fprogile-arcs -ftest-coverage
-#DEBUG = -g
+DEBUG = -g
 
 slave_   = slave_add slave_div slave_mod slave_mul slave_sous
 slave_.o = slave_add.o slave_div.o slave_mod.o slave_mul.o slave_sous.o

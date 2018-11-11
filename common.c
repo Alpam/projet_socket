@@ -212,7 +212,7 @@ void *listener_c(void *arg){
 				break;
 			}
 			else if(buf[0]=='S'){
-				printf("Master Stop\nUtiliser \"quit\" pour terminer.\n");
+				printf("Master Stop\n");
 				break;
 			}
 			else if(buf[0]=='Q'){
@@ -262,6 +262,7 @@ void *listener_c(void *arg){
 	}
 	cl->flag = 0;
 	pthread_cancel(cl->thread_quit_loop);
+	pthread_cancel(thread_to);
 	close(cl->socket_listener);
 	pthread_mutex_unlock(&mutex_ka);
 	pthread_join(thread_to,NULL);
