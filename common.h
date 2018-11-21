@@ -98,5 +98,10 @@ void throwto(int socket, struct sockaddr_in6 target, const char *message);
  */
 void throwto_4(int socket, struct sockaddr_in target, const char *message);
 
+/*
+ * Vérifie qu'un pointeur est non null avant de le free
+ */
+void test_free(void* pointeur);
+
 #endif
 

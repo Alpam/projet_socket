@@ -126,7 +126,7 @@ void chat_loop(struct_for_listener *cl){
 			int sbl_ok = smbl_in_fml(tmp,cl->fct_f);
 			if(!sbl_ok){
 				printf("Fail : Fonction inconnue\n");
-				free(tmp);
+				test_free(tmp);
 				continue;
 			}
 			sbl_ok--;
@@ -134,7 +134,7 @@ void chat_loop(struct_for_listener *cl){
 			s = free_slave_in_smbl(cl->fct_f,sbl_ok);
 			if(s==NULL){
 				printf("Fail : Aucun serveur disponible\n");
-				free(tmp);
+				test_free(tmp);
 				continue;
 			}
 			//envoie de la requête
@@ -430,7 +430,7 @@ void action(const char *buf,struct_for_listener *cl){
 			tmp_sock = socket(AF_INET,SOCK_DGRAM,IPPROTO_UDP);
 			throwto_4(tmp_sock,s.saddr_4,mess);
 		}
-		free(sav);
+		test_free(sav);
 		close(tmp_sock);
 
 	}
@@ -440,8 +440,8 @@ void action(const char *buf,struct_for_listener *cl){
 		fprintf(stdout,"Deconnection de ",id);
 		if(s!=NULL){
 			fprintf(stdout,"(%s:%s)\n",s->ip,s->port);
-			free(s->ip);
-			free(s->port);
+			test_free(s->ip);
+			test_free(s->port);
 			s->id = -1;
 			s->t_ip = 0;
 			s->alive = 0;
@@ -468,7 +468,7 @@ void action(const char *buf,struct_for_listener *cl){
 			printf("(%s",&s->request[2]);
 			printf("%s\n",&buf[i+1]);
 		}
-		free(s->request);
+		test_free(s->request);
 		s->request = NULL;
 	}
 
@@ -521,9 +521,9 @@ void *janitor(void *arg){
 							printf("Abort : %s",ff->slaves[i].smbl);
 							printf("(");
 							printf("%s\n",&ff->slaves[i].request[2]);
-							free(ff->slaves[i].request);
-							free(ff->slaves[i].ip);
-							free(ff->slaves[i].port);
+							test_free(ff->slaves[i].request);
+							test_free(ff->slaves[i].ip);
+							test_free(ff->slaves[i].port);
 							ff->slaves[i].id = -1;
 							ff->slaves[i].t_ip = 0;
 							continue;
@@ -546,8 +546,8 @@ void *janitor(void *arg){
 						}
 						close(sock);
 					}
-					free(ff->slaves[i].ip);
-					free(ff->slaves[i].port);
+					test_free(ff->slaves[i].ip);
+					test_free(ff->slaves[i].port);
 					ff->slaves[i].id = -1;
 					ff->slaves[i].t_ip = 0;
 				}
@@ -561,8 +561,8 @@ void *janitor(void *arg){
 
 void clean(struct_for_listener *cl){
 	//free de la mémoire allouée
-	free(cl->ip);
-	free(cl->ip_4);
+	test_free(cl->ip);
+	test_free(cl->ip_4);
 	fct_family *tmp;
 	pthread_mutex_destroy(&cl->mutex);
 	int i;
@@ -585,16 +585,16 @@ void clean(struct_for_listener *cl){
 				}
 				close(tmp_sock);
 			}
-			free(cl->fct_f->slaves[i].ip);
-			free(cl->fct_f->slaves[i].port);
+			test_free(cl->fct_f->slaves[i].ip);
+			test_free(cl->fct_f->slaves[i].port);
 			if(cl->fct_f->slaves[i].request!=NULL){
-				free(cl->fct_f->slaves[i].request);
+				test_free(cl->fct_f->slaves[i].request);
 			}
 		}
-		free(cl->fct_f->symbole);
+		test_free(cl->fct_f->symbole);
 		tmp = cl->fct_f;
 		cl->fct_f = cl->fct_f->next;
-		free(tmp);
+		test_free(tmp);
 	}
 }
 

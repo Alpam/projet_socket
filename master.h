@@ -149,5 +149,6 @@ void clean(struct_for_listener *cl);
  * vérifie qu'un eslave donne toujours signe de vie
  */
 int still_alive(time_t last_call);
+
 #endif
 

@@ -120,7 +120,7 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 		cl.master_4 = master_4;
 		throwto_4(sock_master, master_4 ,my_addr);
 	}
-	free(my_addr);
+	test_free(my_addr);
 	
 	pthread_join(thread_quit_loop,NULL);
 	if(cl.flag){
@@ -138,10 +138,10 @@ void core_slave(const char* symbole, const char* ip, const char *port,char *(*mi
 		else{
 			throwto_4(sock_master,master_4,tmp);
 		}
-		free(tmp);
-		free(cl.id);
+		test_free(tmp);
+		test_free(cl.id);
 	}
-	free(tmp_ip);
+	test_free(tmp_ip);
 	close(sock_master);
 	return;
 }
@@ -232,7 +232,7 @@ void *listener_c(void *arg){
 										 IPPROTO_UDP);
 					throwto_4(sock_master,cl->master_4,rep);
 				}
-				free(rep);
+				test_free(rep);
 			}
 			else if(buf[0]=='A'){
 				//acceptation par le maitre
@@ -333,7 +333,7 @@ void *keep_alive(void *arg){
 			throwto_4(sock_master,master_4,m);
 		}
 	}
-	free(m);
+	test_free(m);
 	pthread_mutex_destroy(ka->mutex);
 }
 
@@ -354,5 +354,12 @@ void throwto_4(int socket, struct sockaddr_in target, const char *message){
 						strlen(message),0,
 						(struct sockaddr *)&target,
 						addrlen) == -1){printf("err sendto\n");}
+	return;
+}
+
+void test_free(void* pointeur){
+	if(pointeur != NULL){
+		free(pointeur);
+	}
 	return;
 }
